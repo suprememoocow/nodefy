@@ -48,25 +48,17 @@ exports.parse = function(raw){
 
 
 function getRequires(args, factory){
-    var requires = [];
     var deps = getDependenciesNames( args );
-    var params = factory.params.map(function(param, i){
-        return {
-            name : param.name,
-            // simplified cjs doesn't have deps
-            dep : (deps.length)? deps[i] : SIMPLIFIED_CJS[i]
-        };
-    });
+    var params = factory.params;
+    var requires = deps.map(function(dep, i) {
+      var param = params[i];
+      if (param) {
+          // only do require for params that have a matching dependency also
+          // skip "magic" dependencies
+          return 'var '+ param.name +' = require(\''+ dep +'\');';
+      }
 
-    params.forEach(function(param){
-        if ( MAGIC_DEPS[param.dep] && !MAGIC_DEPS[param.name] ) {
-            // if user remaped magic dependency we declare a var
-            requires.push( 'var '+ param.name +' = '+ param.dep +';' );
-        } else if ( param.dep && !MAGIC_DEPS[param.dep] ) {
-            // only do require for params that have a matching dependency also
-            // skip "magic" dependencies
-            requires.push( 'var '+ param.name +' = require(\''+ param.dep +'\');' );
-        }
+      return 'require(\''+ dep +'\');';
     });
 
     return requires.join('\n');
