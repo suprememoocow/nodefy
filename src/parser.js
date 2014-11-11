@@ -97,24 +97,10 @@ function getFactory(args){
 
 
 function getBody(raw, factoryBody, useStrict){
-    var returnStatement = factoryBody.body.filter(function(node){
-        return node.type === 'ReturnStatement';
-    })[0];
+  var bodyStart = useStrict? useStrict.expression.range[1] + 1 : factoryBody.range[0] + 1;
+  var body = raw.substring(bodyStart, factoryBody.range[1] - 1 );
 
-    var body = '';
-    var bodyStart = useStrict? useStrict.expression.range[1] + 1 : factoryBody.range[0] + 1;
-
-    if (returnStatement) {
-        body += raw.substring( bodyStart, returnStatement.range[0] );
-        // "return ".length === 7 so we add "6" to returnStatement start
-        body += 'module.exports ='+ raw.substring( returnStatement.range[0] + 6, factoryBody.range[1] - 1 );
-    } else {
-        // if using exports or module.exports or just a private module we
-        // simply return the factoryBody content
-        body = raw.substring( bodyStart, factoryBody.range[1] - 1 );
-    }
-
-    return body;
+  return '\n\nmodule.exports = (function() {\n' + body + '\n})();';
 }
 
 
